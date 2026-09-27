@@ -8,7 +8,7 @@
 #include <string.h>
 
 
-#if defined(__linux__) || defined(__APPLE__)
+#if defined(__unix__) || defined(__APPLE__)
 #include <termios.h>
 #else
 #include <windows.h>
@@ -52,7 +52,7 @@ unsigned char file_image[70000],progmem[PROGMEM_LEN], config_bytes[CONFIG_LEN];
 //*********************************************************************************//
 //*********************************************************************************//
 
-#if defined(__linux__) || defined(__APPLE__)
+#if defined(__unix__) || defined(__APPLE__)
 
 void initSerialPort()
     {
