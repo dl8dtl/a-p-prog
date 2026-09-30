@@ -38,7 +38,7 @@ char * PP_VERSION = "0.99";
 #define	CF_P18F_G	10
 #define	CF_P18F_Q	11
 
-int verbose = 1,verify = 1,program = 1;
+int verbose = 1,verify = 1,program = 1,readout = 0;
 // set a proper init value for sleep time to avoid a lot of issues such as 'rx fail'.
 int sleep_time = 2000;
 int devid_expected,devid_mask,baudRate,com,flash_size,page_size,chip_family,config_size;
@@ -327,6 +327,7 @@ void printHelp()
     flsprintf(stdout,"-v NUM : verbose output level (default: 1)\n");
     flsprintf(stdout,"-n : skip verify after program\n");
     flsprintf(stdout,"-p : skip program \n");
+    flsprintf(stdout,"-r : read out flash\n");
     flsprintf(stdout,"-h : show this help message and exit\n");
     exit(0);
     }
@@ -335,7 +336,7 @@ void printHelp()
 void parseArgs(int argc, char *argv[])
     {
     int c;
-    while ((c = getopt (argc, argv, "c:nphs:t:v:")) != -1)
+    while ((c = getopt (argc, argv, "c:nphrs:t:v:")) != -1)
         {
         switch (c)
             {
@@ -349,6 +350,9 @@ void parseArgs(int argc, char *argv[])
                 program = 0;
                 // skip program means also skip verify.
                 verify = 0;
+                break;
+            case 'r':
+                readout = 1;
                 break;
             case 's' :
                 sscanf(optarg,"%d",&sleep_time);
@@ -1036,7 +1040,13 @@ int main(int argc, char *argv[])
     int i,j,pages_performed,config,econfig;
     unsigned char * pm_point, * cm_point;
     unsigned char tdat[200];
+    FILE *outfile;
     parseArgs(argc,argv);
+    if (readout==1)
+        {
+          verify = 1; // use verification routine for readout
+          program = 0;
+        }
     // check setCPUtype works or not.
     if (flash_size==0)
         {
@@ -1060,26 +1070,41 @@ int main(int argc, char *argv[])
         sleep_ms (sleep_time);
         }
 
-    for (i=0; i<PROGMEM_LEN; i++) progmem[i] = 0xFF;		//assume erased memories (0xFF)
     for (i=0; i<CONFIG_LEN; i++) config_bytes[i] = 0xFF;
 
     char* filename=argv[argc-1];
     pm_point = (unsigned char *)(&progmem);
     cm_point = (unsigned char *)(&config_bytes);
-    parse_hex(filename,pm_point,cm_point);					//parse and write content of hex file into buffers
-
-    //now this is ugly kludge
-    //my original programmer expected only file_image holding the image of memory to be programmed
-    //for PIC18, it is divided into two regions, program memory and config. to glue those two
-    //different approaches, I made this. not particulary proud of having this mess
-    for (i=0; i<70000; i++) file_image [i] = progmem[i];
-    for (i=0; i<10; i++) file_image [2*0x8007 + i] = config_bytes[i];
-//    for (i=0; i<10; i++) printf ("%2.2x",config_bytes[i]);
-    for (i=0; i<70000; i++)
+    if (readout==1)
         {
-        if ((i%2)!=0)
-            file_image[i] = 0x3F&file_image[i];
+          // fill buffer with 0 to force reading all
+          memset(progmem, 0, PROGMEM_LEN);
+          outfile = fopen(filename, "wb");
+          if (outfile == NULL)
+            {
+              printf("Error opening output file %s\n", filename);
+              printf("Exiting now\n");
+              exit(1);
+            }
         }
+    else
+        {
+          memset(progmem, 0xFF, PROGMEM_LEN);		//assume erased memories (0xFF)
+          parse_hex(filename,pm_point,cm_point);					//parse and write content of hex file into buffers
+          //now this is ugly kludge
+          //my original programmer expected only file_image holding the image of memory to be programmed
+          //for PIC18, it is divided into two regions, program memory and config. to glue those two
+          //different approaches, I made this. not particulary proud of having this mess
+          for (i=0; i<70000; i++) file_image [i] = progmem[i];
+          for (i=0; i<10; i++) file_image [2*0x8007 + i] = config_bytes[i];
+          //    for (i=0; i<10; i++) printf ("%2.2x",config_bytes[i]);
+          for (i=0; i<70000; i++)
+            {
+              if ((i%2)!=0)
+                file_image[i] = 0x3F&file_image[i];
+            }
+        }
+
 
     prog_enter_progmode();									//enter programming mode and probe the target
     i = prog_get_device_id();
@@ -1153,7 +1178,9 @@ int main(int argc, char *argv[])
         if (verify==1)
             {
             pages_performed = 0;
-            if (verbose>0) printf ("Verifying FLASH (%d B in %d pages per %d bytes): \n",flash_size,flash_size/page_size,page_size);
+            if (verbose>0) printf ("%s FLASH (%d B in %d pages per %d bytes): \n",
+                                   readout? "Reading": "Verifying",
+                                   flash_size,flash_size/page_size,page_size);
             for (i=0; i<flash_size; i=i+page_size)
                 {
                 if (is_empty(progmem+i,page_size))
@@ -1171,12 +1198,14 @@ int main(int argc, char *argv[])
 					else
 						p18a_read_page(tdat,i,page_size);
                     pages_performed++;
-                    if (verbose>3) printf ("Verifying page at 0x%4.4X\n",i);
+                    if (verbose>3) printf ("%s page at 0x%4.4X\n",readout? "Reading": "Verifying", i);
                     if (verbose>1)
                         {
                         printf ("#");
                         fflush(stdout);
                         }
+                    if (readout==1)
+                      memcpy(progmem+i,tdat,page_size);
                     for (j=0; j<page_size; j++)
                         {
                         if (progmem[i+j] != tdat[j])
@@ -1189,14 +1218,14 @@ int main(int argc, char *argv[])
                         }
                     }
                 }
-            if (verbose>0) printf ("\n%d pages verified\n",pages_performed);        
+            if (verbose>0) printf ("\n%d pages %s\n",pages_performed,readout? "read": "verified");
             if ((chip_family==CF_P18F_F)|(chip_family==CF_P18F_Q))
 				p16c_read_page(tdat,0x300000*2,page_size);	
 			else
 				p18a_read_page(tdat,0x300000,page_size);
-			
-			if (verbose>0) printf ("Verifying config...");
-			for (i=0; i<config_size; i++) 
+			if (readout == 0) {
+			  if (verbose>0) printf ("Verifying config...");
+			  for (i=0; i<config_size; i++)
 				{
                  if (config_bytes[i] != tdat[i])
                     {
@@ -1207,6 +1236,7 @@ int main(int argc, char *argv[])
 					}
 				}
 			if (verbose>0) printf ("OK\n");
+			}
             }
         }
     else
@@ -1235,7 +1265,9 @@ int main(int argc, char *argv[])
             }
         if (verify==1)
             {
-            if (verbose>0) printf ("Verifying FLASH (%d B in %d pages)",flash_size,flash_size/page_size);
+            if (verbose>0) printf ("%s FLASH (%d B in %d pages)",
+				   readout? "Reading": "Verifying",
+				   flash_size,flash_size/page_size);
             fflush(stdout);
             if ((chip_family==CF_P16F_A)|(chip_family==CF_P16F_B)|(chip_family==CF_P16F_D)) p16a_rst_pointer();
             for (i=0; i<flash_size; i=i+page_size)
@@ -1247,6 +1279,8 @@ int main(int argc, char *argv[])
                     }
                 if ((chip_family==CF_P16F_A)|(chip_family==CF_P16F_B)|(chip_family==CF_P16F_D)) p16a_read_page(tdat,page_size);
                 if ((chip_family==CF_P16F_C)) p16c_read_page(tdat,i,page_size);
+		if (readout == 1)
+		  memcpy(progmem + i,tdat,page_size);
                 for (j=0; j<page_size; j++)
                     {
                     if (file_image[i+j] != tdat[j])
@@ -1262,23 +1296,42 @@ int main(int argc, char *argv[])
 			if ((chip_family==CF_P16F_A)|(chip_family==CF_P16F_B)|(chip_family==CF_P16F_D))
 				{
 				config = p16a_get_config(7);
+				if (readout==1)
+				  {
+					tdat[0] = config & 0xFF;
+					tdat[1] = (config & 0xFF00) >> 8;
+					config_size = 4;
+				  }
+				else
+				  {
 				econfig = (((unsigned int)(file_image[2*0x8007]))<<0) + (((unsigned int)(file_image[2*0x8007+1]))<<8);
 				if (config==econfig)
 					{
 					if (verbose>1) printf ("config 1 OK: %4.4X\n",config);
 					}
 				else	printf ("config 1 error: E:0x%4.4X R:0x%4.4X\n",config,econfig);
+				  }
 				config = p16a_get_config(8);
+				if (readout==1)
+				  {
+					tdat[2] = config & 0xFF;
+					tdat[3] = (config & 0xFF00) >> 8;
+				  }
+				else
+				  {
 				econfig = (((unsigned int)(file_image[2*0x8008]))<<0) + (((unsigned int)(file_image[2*0x8008+1]))<<8);
 				if (config==econfig)
 					{
 					if (verbose>1) printf ("config 2 OK: %4.4X\n",config);
 					}
 				else	printf ("config 2 error: E:0x%4.4X R:0x%4.4X\n",config,econfig);
+				  }
 				}
 			if (chip_family==CF_P16F_C)
 				{
 				p16c_read_page(tdat,0x8007*2,page_size);
+				config_size = 10;
+				if (readout==0)
                 for (j=0; j<10; j++)
                     {
                     if (config_bytes[j] != tdat[j])
@@ -1293,6 +1346,12 @@ int main(int argc, char *argv[])
             }
         }
     prog_exit_progmode();
+    if (readout)
+      {
+        fwrite(progmem, 1, flash_size, outfile);
+        fwrite(tdat, 1, config_size, outfile);
+        fclose(outfile);
+      }
     return 0;
     }
 
