@@ -528,7 +528,6 @@ for (i=0;i<8;i++)
 
 unsigned int isp_read_14s (void)
 {
-unsigned char i;
 unsigned int out;
 out = isp_read_16();
 out = out &0x7FFE;
@@ -966,7 +965,6 @@ p16c_begin_prog(0);
 void p16c_isp_read_pgm (unsigned int * data, unsigned long addr, unsigned char n)
 {
 unsigned char i;
-unsigned int tmp1,tmp2;
 //_delay_us(3*ISP_CLK_DELAY);
 p16c_set_pc(addr);
 for (i=0;i<n;i++)  
@@ -975,7 +973,6 @@ for (i=0;i<n;i++)
 
 void p16c_isp_write_cfg (unsigned int data, unsigned long addr)
 {
-unsigned char i;
 //_delay_us(3*ISP_CLK_DELAY);
 p16c_set_pc(addr);
 p16c_load_nvm(data,0);  
@@ -997,7 +994,6 @@ for (i=0;i<n;i++)
 
 void p18q_isp_write_cfg (unsigned int data, unsigned long addr)
 {
-unsigned char i;
 //_delay_us(3*ISP_CLK_DELAY);
 p16c_set_pc(addr);
 isp_send_8_msb(0xE0);  
@@ -1035,8 +1031,7 @@ return (uint8_t) UDR0;
 
 void usart_tx_hexa_8 (uint8_t value)
 {
-uint8_t temp;
-temp = value;
+(void)value;
 usart_tx_b('0');
 usart_tx_b('x');
 usart_tx_hexa_8b(value);
