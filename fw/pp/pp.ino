@@ -1,3 +1,5 @@
+
+
 /*
  * pp programmer, for SW 0.99 and higher
  * 
@@ -34,8 +36,8 @@
 #define  ISP_CLK_DELAY  1
 void isp_send (unsigned int data, unsigned char n);
 unsigned int isp_read_16 (void);
-unsigned char enter_progmode (void);
-unsigned char exit_progmode (void);
+void enter_progmode (void);
+void exit_progmode (void);
 void isp_read_pgm (unsigned int * data, unsigned char n);
 void isp_write_pgm (unsigned int * data, unsigned char n);
 void isp_mass_erase (void);
@@ -43,7 +45,7 @@ void isp_reset_pointer (void);
 void isp_send_8_msb (unsigned char data);
 unsigned int isp_read_8_msb (void);
 unsigned int isp_read_16_msb (void);
-unsigned char p16c_enter_progmode (void);
+void p16c_enter_progmode (void);
 void p16c_set_pc (unsigned long pc);
 void p16c_bulk_erase (void);
 void p16c_load_nvm (unsigned char inc, unsigned int data);
@@ -53,7 +55,7 @@ void p16c_isp_write_cfg (unsigned int data, unsigned int addr);
 void p18q_isp_write_pgm (unsigned int * data, unsigned long addr, unsigned char n);
 void p18q_isp_write_cfg (unsigned int data, unsigned long addr);
 
-unsigned char p18_enter_progmode (void);
+void p18_enter_progmode (void);
 unsigned int p18_get_ID (void);
 void p18_send_cmd_payload (unsigned char cmd, unsigned int payload);
 unsigned int p18_get_cmd_payload (unsigned char cmd);
@@ -659,7 +661,7 @@ for (i=0;i<16;i++)
 
 
 
-unsigned char enter_progmode (void)
+void enter_progmode (void)
 {
 ISP_MCLR_0
 _delay_us(300);
@@ -674,7 +676,7 @@ isp_send(0,1);
 
 /**************************************************************************************************************************/
 
-unsigned char p18_enter_progmode (void)
+void p18_enter_progmode (void)
 {
 ISP_MCLR_0
 _delay_us(300);
@@ -878,7 +880,7 @@ unsigned int p18_get_cmd_payload (unsigned char cmd)
   }
 
 
-unsigned char exit_progmode (void)
+void exit_progmode (void)
 {
 ISP_MCLR_1
 _delay_ms(30);
@@ -889,7 +891,7 @@ ISP_MCLR_1
 
 //***********************************************************************************//
 
-unsigned char p16c_enter_progmode (void)
+void p16c_enter_progmode (void)
 {
 ISP_MCLR_0
 _delay_us(300);
