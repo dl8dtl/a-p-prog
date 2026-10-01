@@ -1280,7 +1280,7 @@ int main(int argc, char *argv[])
                 if ((chip_family==CF_P16F_A)|(chip_family==CF_P16F_B)|(chip_family==CF_P16F_D)) p16a_read_page(tdat,page_size);
                 if ((chip_family==CF_P16F_C)) p16c_read_page(tdat,i,page_size);
 		if (readout == 1)
-		  memcpy(progmem + i,tdat,page_size);
+		  memcpy(file_image + i,tdat,page_size);
                 for (j=0; j<page_size; j++)
                     {
                     if (file_image[i+j] != tdat[j])
