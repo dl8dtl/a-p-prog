@@ -39,19 +39,25 @@ unsigned int isp_read_16 (void);
 void enter_progmode (void);
 void exit_progmode (void);
 void isp_read_pgm (unsigned int * data, unsigned char n);
-void isp_write_pgm (unsigned int * data, unsigned char n);
+void isp_write_pgm (unsigned int * data, unsigned char n, unsigned char slow);
 void isp_mass_erase (void);
 void isp_reset_pointer (void);
 void isp_send_8_msb (unsigned char data);
 unsigned int isp_read_8_msb (void);
 unsigned int isp_read_16_msb (void);
+void isp_send_config (unsigned int data);
+void isp_inc_pointer (void);
+void isp_reset_pointer_16d (void);
+unsigned int isp_read_14s (void);
 void p16c_enter_progmode (void);
 void p16c_set_pc (unsigned long pc);
 void p16c_bulk_erase (void);
-void p16c_load_nvm (unsigned char inc, unsigned int data);
+void p16c_load_nvm (unsigned int data, unsigned char inc);
 unsigned int p16c_read_data_nvm (unsigned char inc);
 void p16c_begin_prog (unsigned char cfg_bit);
-void p16c_isp_write_cfg (unsigned int data, unsigned int addr);
+void p16c_isp_write_cfg (unsigned int data, unsigned long addr);
+void p16c_isp_read_pgm (unsigned int * data, unsigned long addr, unsigned char n);
+void p16c_isp_write_pgm (unsigned int * data, unsigned long addr, unsigned char n);
 void p18q_isp_write_pgm (unsigned int * data, unsigned long addr, unsigned char n);
 void p18q_isp_write_cfg (unsigned int data, unsigned long addr);
 
@@ -62,15 +68,25 @@ unsigned int p18_get_cmd_payload (unsigned char cmd);
 unsigned int isp_read_8 (void);
 void p18_set_tblptr (unsigned long val);
 unsigned char p18_read_pgm_byte (void);
-void p_18_modfied_nop (void);
+void p_18_modfied_nop (unsigned char nop_long);
 void p18_isp_mass_erase (void);
 void p18fk_isp_mass_erase (unsigned char data1, unsigned char data2, unsigned char data3);
+void p_18_isp_read_pgm (unsigned int * data, unsigned long addr, unsigned char n);
+void p18_isp_write_pgm (unsigned int * data, unsigned long addr, unsigned char n);
+void p18_isp_write_cfg (unsigned char data1, unsigned char data2, unsigned long addr);
+void p18fj_isp_mass_erase (void);
+void p18fk_isp_write_pgm (unsigned int * data, unsigned long addr, unsigned char n);
+void p18fk_isp_write_cfg (unsigned char data1, unsigned char data2, unsigned long addr);
 
 
 void usart_tx_b(uint8_t data);
 uint8_t usart_rx_rdy(void);
 uint8_t usart_rx_b(void);
 void usart_tx_s(uint8_t * data);
+void usart_tx_hexa_8b (uint8_t value);
+
+unsigned char rx_state_machine (unsigned char state, unsigned char rx_char);
+
 
 #define _BAUD	57600	// Baud rate (9600 is default)
 #define _UBRR	(F_CPU/16)/_BAUD - 1	// Used for UBRRL and UBRRH 
