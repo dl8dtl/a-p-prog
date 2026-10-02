@@ -1038,7 +1038,7 @@ int parse_hex (char * filename, unsigned char * progmem, unsigned char * config)
 int main(int argc, char *argv[])
     {
     int i,j,pages_performed,config,econfig;
-    unsigned char * pm_point, * cm_point;
+    unsigned char * pm_point, * cm_point, * read_buffer;
     unsigned char tdat[200];
     FILE *outfile;
     parseArgs(argc,argv);
@@ -1122,6 +1122,7 @@ int main(int argc, char *argv[])
     //ah, I need to unify programming interfaces for PIC16 and PIC18
     if ((chip_family==CF_P18F_A)|(chip_family==CF_P18F_B)|(chip_family==CF_P18F_D)|(chip_family==CF_P18F_E)|(chip_family==CF_P18F_F)|(chip_family==CF_P18F_Q))
         {
+	  read_buffer = progmem;
         if (program==1)
             {
             pages_performed = 0;
@@ -1241,6 +1242,7 @@ int main(int argc, char *argv[])
         }
     else
         {
+	  read_buffer = file_image;
         if (program==1)
             {
             if ((chip_family==CF_P16F_A)|(chip_family==CF_P16F_B)|(chip_family==CF_P16F_D)) p16a_mass_erase();
@@ -1348,7 +1350,7 @@ int main(int argc, char *argv[])
     prog_exit_progmode();
     if (readout)
       {
-        fwrite(progmem, 1, flash_size, outfile);
+        fwrite(read_buffer, 1, flash_size, outfile);
         fwrite(tdat, 1, config_size, outfile);
         fclose(outfile);
       }
