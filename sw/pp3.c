@@ -87,7 +87,7 @@ void initSerialPort()
         {
         perror(COM);
         printf("set attr error");
-        abort();
+        exit(1);
         }
     tcflush(com,TCIOFLUSH); // just in case some crap is the buffers
     }
@@ -236,7 +236,7 @@ void comErr(char *fmt, ...)
     fprintf(stderr,"%s", buf);
     perror(COM);
     va_end(va);
-    abort();
+    exit(1);
     }
 
 void flsprintf(FILE* f, char *fmt, ...)
@@ -373,7 +373,7 @@ void parseArgs(int argc, char *argv[])
                     fprintf (stderr,"Unknown option character `\\x%x'.\n",optopt);
             default:
                 fprintf (stderr,"Bug, unhandled option '%c'\n",c);
-                abort ();
+                exit(1);
             }
         }
     if (argc<=1)
