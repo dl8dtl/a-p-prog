@@ -317,7 +317,7 @@ void printHelp()
     flsprintf(stdout,"-v NUM : verbose output level (default: 1)\n");
     flsprintf(stdout,"-n : skip verify after program\n");
     flsprintf(stdout,"-p : skip program \n");
-    flsprintf(stdout,"-r : read out flash\n");
+    flsprintf(stdout,"-r : read out flash into a binary file\n");
     flsprintf(stdout,"-h : show this help message and exit\n");
     exit(0);
     }
