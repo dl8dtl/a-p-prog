@@ -70,17 +70,7 @@ void initSerialPort()
 
     cfsetispeed(&opts, baudRate);
     cfsetospeed(&opts, baudRate);
-    opts.c_lflag  &=  ~(ICANON | ECHO | ECHOE | ISIG);
-
-    opts.c_cflag |=  (CLOCAL | CREAD);
-    opts.c_cflag &=  ~PARENB;
-    opts.c_cflag &= ~CSTOPB;
-    opts.c_cflag &=  ~CSIZE;
-    opts.c_cflag |=  CS8;
-    opts.c_oflag &=  ~OPOST;
-    opts.c_iflag &=  ~INPCK;
-    opts.c_iflag &=  ~ICRNL;		//do NOT translate CR to NL
-    opts.c_iflag &=  ~(IXON | IXOFF | IXANY);
+    cfmakeraw(&opts);
     opts.c_cc[ VMIN ] = 0;
     opts.c_cc[ VTIME ] = 10;//0.1 sec
     if (tcsetattr(com, TCSANOW, &opts) != 0)
