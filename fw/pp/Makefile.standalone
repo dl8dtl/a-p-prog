@@ -1,0 +1,14 @@
+# standalone Makefile with AVR-GCC / AVRDUDE
+
+MCU=atmega328p
+PORT=/dev/cuaU5
+CC=avr-gcc
+CFLAGS=-g -Os -mmcu=$(MCU) -DF_CPU=16000000
+
+all: pp.ino.elf
+
+pp.ino.elf: pp.ino
+	$(CC) $(CFLAGS) -o pp.ino.elf -xc pp.ino
+
+upload: pp.ino.elf
+	avrdude -c arduino -p $(MCU) -P $(PORT) -U pp.ino.elf
